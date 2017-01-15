@@ -1,0 +1,38 @@
+option optimize_for = SPEED;
+option java_package = "routing";
+
+import "common.proto";
+
+
+message FileTask {  
+    optional int32 chunk_no = 1;
+    optional bytes chunk = 2;
+  required string filename = 3; 
+  enum FileTaskType {
+      READ = 1;
+      WRITE = 2;
+      DELETE = 3;
+      UPDATE = 4;
+    }
+    required FileTaskType file_task_type = 4;
+    optional int32 chunk_counts = 5;
+    optional string sender = 6;
+}
+
+message CommandMessage {
+   required Header header = 1;
+
+   optional FileTask filetask = 2;
+   oneof payload {
+      // a client (external) sanity check for testing
+      bytes file = 6;
+
+      bool ping = 3;
+
+      string message = 4;
+      
+      Failure err = 5;
+   }
+}
+
+

@@ -1,0 +1,81 @@
+option optimize_for = SPEED;
+option java_package = "pipe.work";
+
+import "common.proto";
+import "election.proto";
+import "pipe.proto";
+
+message WorkState {
+    required int32 enqueued = 1;
+    required int32 processed = 2;
+}
+
+message Heartbeat {
+    required WorkState state = 1;
+}
+
+/**
+ * description of the work
+ */
+message Task {
+    required int64 series_id = 1;
+    required int32 seq_id = 2;
+}
+
+	message Steal {
+        optional READ_STEAL readSteal = 1;
+        optional WRITE_STEAL writeSteal = 3;
+    }
+
+	enum READ_STEAL {
+		READ_STEAL_REQUEST = 1;
+		READ_STEAL_RESPONSE = 2;
+	}
+
+	enum WRITE_STEAL {
+		WRITE_STEAL_REQUEST = 1;
+		WRITE_STEAL_RESPONSE = 2;
+	}
+
+// These are messages to keep the network running (not to perform work)
+message WorkMessage {
+    required Header header = 1;
+    required int64 secret = 2;
+    optional string requestId = 14;
+    enum Worktype {
+        REPLICATE_REQUEST = 1;
+        READ_REQUEST = 2;
+        READ_REQUEST_RESPONSE = 3;
+        REPLICATE_RESPONSE = 4;
+        DELETE_REQUEST= 5;
+        DELETE_RESPONSE = 6;
+        UPDATE_REPLICATE_REQUEST = 7;
+        UPDATE_DELETE_REQUEST = 8;
+        UPDATE_REPLICATE_RESPONSE = 9;
+        UPDATE_DELETE_RESPONSE = 10;
+    }
+    optional Worktype worktype = 13;
+    
+    optional Steal steal = 10;
+    optional bool newNode =15;
+    /**
+     * The actions (request or response) is
+     * implicit through which data structure is in the payload.
+     */
+    oneof payload {
+        Failure err = 3;
+
+        // a sanity check for testing
+        bool ping = 4;
+
+        // status updates between adjacent workers
+        Heartbeat beat = 5;
+
+        FileTask filetask = 6;
+        WorkState state = 7;
+        LeaderStatus leader = 8;
+
+        RaftElectionMessage raftMessage = 9;
+        NewNodeMessage newNodeMessage = 11; 
+       }
+}
